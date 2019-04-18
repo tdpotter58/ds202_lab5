@@ -1,0 +1,68 @@
+---
+title: "Team"
+author: "Tim Potter, Michael Bardfield"
+date: "April 17, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+```
+
+## Lab 5
+
+```{r load}
+acc <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/accident.csv", stringsAsFactors = FALSE)
+names(acc)
+pers <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/person.csv", stringsAsFactors = FALSE)
+names(pers)
+```
+
+## Part 1: Accident Data
+
+```{r accident}
+table(acc$DAY_WEEK)
+table(acc$HOUR)
+table(acc$DRUNK_DR)
+sum(acc$DRUNK_DR > 0)
+```
+
+1) The most accidents occur on days 1, 6, and 7. I believe these are Sunday, Friday, and Saturday.
+2) The time of day with the most accidents is between hours 17 and 21.
+3) 8769 accidents had at least 1 drunk driver.
+
+## Part 2: Connecting Data
+
+```{r connecting}
+table(pers$PER_TYP)
+driver <- pers %>%
+  filter(PER_TYP == 1)
+head(driver)
+names(acc)
+names(driver)
+acc_driver <- inner_join(acc, driver, by = c("STATE", "ST_CASE", "VE_FORMS", "COUNTY", "DAY", "MONTH", "HOUR", 
+                                             "MINUTE", "RUR_URB", "FUNC_SYS", "HARM_EV", "MAN_COLL", "SCH_BUS"))
+table(acc_driver$DAY_WEEK)
+table(acc_driver$HOUR)
+table(acc_driver$SEX)
+
+ggplot(acc_driver, aes(x = DAY_WEEK)) + geom_bar() + ylab("Number of Accidents") + xlab("Day of Week") + 
+  ggtitle("Number of Accidents per Day of Week")
+
+acc_driver %>%
+  filter(HOUR < 24) %>%
+  ggplot(aes(x = HOUR)) + geom_bar() + ylab("Number of Accidents") + xlab("Hour of the Day") + ggtitle("Number of Accidents per Hour of Day")
+
+acc_driver %>%
+  filter(SEX == 1 | SEX == 2) %>%
+  ggplot(aes(x = SEX)) + geom_bar() + ylab("Number of Accidents") + xlab("Gender of Driver") + 
+  ggtitle("Number of Accidents per Gender of Driver")
+```
+
+Important notes here:
+  
+  The first day of the week in this data is Sunday.
+  
+  Male is defined as 1, Female as 2.
