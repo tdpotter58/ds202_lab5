@@ -66,3 +66,23 @@ Important notes here:
   The first day of the week in this data is Sunday.
   
   Male is defined as 1, Female as 2.
+
+## Part 3: Connecting data and make maps
+```{r part 3}
+counties <- map_data('county')
+library(readxl)
+glcs <- readxl::read_xlsx('FRPP_GLC_United_States.xlsx', skip=1)
+names(glcs)
+
+glcs$`State Code` <- as.numeric(glcs$`State Code`)
+glcs$`City Code` <- as.numeric(glcs$`City Code`)
+glcs$`County Code` <- as.numeric(glcs$`County Code`)
+
+data <- inner_join(acc, glcs, by = c("STATE" = "State Code", "CITY" = "City Code", "COUNTY" = "County Code"))
+data$`State Name` <- tolower(data$`State Name`)
+data$`County Name` <- tolower(data$`County Name`)
+
+mapdata <- full_join(data, counties, by=c("State Name" = "region", "County Name" = "subregion"))
+
+ggplot(mapdata, aes(x=long,y=lat)) + geom_polygon(aes(group=group))
+```
