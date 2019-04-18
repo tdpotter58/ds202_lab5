@@ -1,0 +1,56 @@
+---
+title: "Michael Bardfield"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#lab5
+````{r data}
+library(tidyverse)
+library(ggplot2)
+acc <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/accident.csv", stringsAsFactors = FALSE)
+names(acc)
+per <- read.csv("https://raw.githubusercontent.com/xdaiISU/ds202materials/master/hwlabs/fars2017/person.csv", stringsAsFactors = FALSE)
+names(per)
+```
+
+```{r part 1}
+#Part 1: Accident data
+
+#Accident tend to happen more often on Friday, Saturday and Sunday
+ggplot(acc, aes(x=DAY_WEEK)) + geom_bar() + xlab('Day of the Week')
+
+#HOUR = 99 means that time of the accident is unknown so I filtered that out. We can see at hour 18 accidents peak. Most accidents occur in the evening.
+acc %>% filter(HOUR <= 24) %>% ggplot(aes(x=HOUR)) + geom_bar() + xlab("Hour in Military Time")
+
+#I show the number of drunk drivers by day of the week. We can see most drunk driving accidents occur on Friday, Saturday and Sunday.
+ggplot(acc, aes(x=DAY_WEEK, fill=DRUNK_DR > 0)) + geom_bar() + xlab('Day of the Week') + scale_fill_manual("Drunk Driver", values=c("red","green"))
+```
+
+```{r part 2}
+driver <- per %>% filter(PER_TYP == 1)
+joined <- left_join(driver, acc, by=c('ST_CASE','HOUR','MONTH','DAY','STATE'))
+names(joined)
+joined %>% filter(HOUR <= 24) %>% ggplot(aes(x=HOUR, fill= SEX<=1)) + geom_bar() + scale_fill_manual("Male", values=c("red","lightgreen")) + facet_wrap(~DAY_WEEK)
+```
+
+```{r part 3}
+counties <- map_data('county')
+library(readxl)
+glcs <- readxl::read_xlsx('FRPP GLC United States.xlsx', skip=1)
+names(glcs)
+
+glcs$`State Code` <- as.numeric(glcs$`State Code`)
+glcs$`City Code` <- as.numeric(glcs$`City Code`)
+glcs$`County Code` <- as.numeric(glcs$`County Code`)
+
+data <- inner_join(acc, glcs, by = c("STATE" = "State Code", "CITY" = "City Code", "COUNTY" = "County Code"))
+data$`State Name` <- tolower(data$`State Name`)
+data$`County Name` <- tolower(data$`County Name`)
+
+mapdata <- full_join(data, counties, by=c("State Name" = "region", "County Name" = "subregion"))
+
+ggplot(mapdata, aes(x=long,y=lat)) + geom_polygon(aes(group=group))
+```
